@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+  <head>
+      <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <style>
+       #map {
+        height:100%;
+        width: 100%;
+       }
+    </style>
+      {% load static %}
+  </head>
+  <body>
+    <h3>My Google Maps Demo</h3>
+    <div>
+    <form id="listform" method="POST">{% csrf_token %}
+        <select name="ddlSearchWords" id="ddlSearchWords">
+            <option value="Elections" selected>Elections</option>
+            <option value="Health">Health</option>
+            <option value="Travel">Travel</option>
+            <option value="Religion">Religion</option>
+            <option value="Food">Food</option>
+            <option value="Leisure">Leisure</option>
+            <option value="Sports">Sports</option>
+            <option value="Science & Technology">Science & Technology</option>
+            <option value="Peace">Peace</option>
+            <option value="Fashion">Fashion</option>
+        </select>
+        <button type="submit" onsubmit="initMap()">Submit</button>
+        </form>
+    </div>
+    <div id="map"></div>
+    <script>
+        function initMap() {
+            var uluru = {lat: 20, lng: -30};
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 3,
+                center: uluru
+            });
+
+            {#---Ajax---#}
+
+            $('#listform').on('submit', function (event) {
+                event.preventDefault();
+                var selectedword = document.getElementById("ddlSearchWords");
+            searchKeyword = selectedword.options[selectedword.selectedIndex].value;
+            console.log(searchKeyword);
+                $.ajax({
+                    url: '/post/',
+                    type: 'POST',
+                    data: {Search: searchKeyword, csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val()},
+
+                    success: function (json) {
+                        var map = new google.maps.Map(document.getElementById('map'), {
+                            zoom: 3,
+                            center: uluru
+                        });
+
+                        console.log(json);
+                        console.log(json.length);
+                        console.log(json.coordinates)
+                        for(i=0; i<json.length.hits; i++){
+                            console.log(json.coordinates[i].lat);
+                            console.log(json.coordinates[i].lng);
+                            var myLatlng = new google.maps.LatLng(parseFloat(json.coordinates[i].lat),parseFloat(json.coordinates[i].lng));
+                            console.log(myLatlng);
+
+                            var marker = new google.maps.Marker({
+                                map: map,
+                                position: myLatlng
+
+                            })
+                        }
+
+                    }
+                });
+            });
+        }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_gCjyhs9jCpqFYBvWQv0Gf5WcV1rWmKM&callback=initMap">
+    </script>
+  </body>
+</html>

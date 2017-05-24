@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+  <head>
+      <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <style>
+
+	   html { height: 100% }
+body { height: 80%; margin: 10px; padding: 10px }
+#heading{position: fixed; right: 600px; color: blue;top: 10px}
+#container { width: 100%; height: 100% }
+#nav { z-index: 100; position: absolute;
+       padding: 5px;
+position:fixed;
+  top: 0;
+  left:0;
+  width:<fixed px>;
+  height:<fixed px>;  }
+#map { top: 70px;
+        height: 700px;
+        width: 100%;}
+body {
+    background-image: url("https://img.clipartfox.com/7f384ac86f9da405552280b0fabece9d_turquoise-green-light-color-light-color-background-clipart_1300-1300.jpeg");
+}
+h3 {
+    text-align: center;
+}
+    </style>
+      {% load static %}
+  </head>
+  <body>
+  <div id="container">
+
+
+    <div id="nav"   >
+	<h4>Tweet Count: <span id="tweetspan"> 0 </span><h4>
+	<div id="heading">
+        <h1 color = "Blue">Twitt Trend</h1></div>
+
+	    <form id="listform" method="POST">{% csrf_token %}
+        <select name="ddlSearchWords" class="form-control" id="ddlSearchWords">
+            <option value="Elections" selected>Elections</option>
+            <option value="Travel">Travel</option>
+            <option value="Religion">Religion</option>
+            <option value="Food">Food</option>
+            <option value="Sports Following">Sports Following</option>
+            <option value="Technology">Technology</option>
+            <option value="Peace">Peace</option>
+            <option value="Brands">Brands</option>
+            <option value="Studies">Studies</option>
+            <option value="Countries">Countries</option>
+        </select>
+		<br>
+
+		<div style="position:absolute;vertical-align:middle;text-align:center;">
+        <button type="submit"  class="btn btn-primary" style="width:190px" onsubmit="initMap()">Submit</button>
+		</div>
+        </form>
+
+    </div>
+
+    <div id="map">
+	</div>
+
+	</div>
+    <script>
+        function initMap() {
+            var uluru = {lat: 20, lng: -30};
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 3,
+                center: uluru
+            });
+            {#---Ajax---#}
+            $('#listform').on('submit', function (event) {
+                event.preventDefault();
+                var selectedword = document.getElementById("ddlSearchWords");
+            searchKeyword = selectedword.options[selectedword.selectedIndex].value;
+            console.log(searchKeyword);
+var map = new google.maps.Map(document.getElementById('map'), {
+                                    zoom: 3,
+                                    center: uluru
+                                });
+                        $.ajax({
+                            url: '/post/',
+                            type: 'POST',
+                            data: {
+                                Search: searchKeyword,
+                                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                            },
+                            success: function (json) {
+                                {#                        console.log(json);#}
+                                console.log(json.length);
+                                {#                        console.log(json.coordinates)#}
+                                for (i = 0; i < json.length.hits; i++) {
+                                    {#                            console.log(json.coordinates[i].lat);#}
+                                    {#                            console.log(json.coordinates[i].lng);#}
+                                    console.log(json.sentiment[i]);
+                                    var myLatlng = new google.maps.LatLng(parseFloat(json.coordinates[i].lat), parseFloat(json.coordinates[i].lng));
+                                    {#                            console.log(myLatlng);#}
+                                    if (json.sentiment[i]=="positive") {
+                                        var marker = new google.maps.Marker({
+                                            map: map,
+                                            animation: google.maps.Animation.DROP,
+                                            position: myLatlng,
+                                            title: json.tweet[i],
+                                            icon:'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                                        })
+                                    }
+                                    if (json.sentiment[i]=="negative") {
+                                        var marker = new google.maps.Marker({
+                                            map: map,
+                                            animation: google.maps.Animation.DROP,
+                                            position: myLatlng,
+                                            title: json.tweet[i],
+                                            icon:'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                                        })
+                                    }
+                                    if (json.sentiment[i]=="neutral") {
+                                        var marker = new google.maps.Marker({
+                                            map: map,
+                                            position: myLatlng,
+                                            animation: google.maps.Animation.DROP,
+                                            title: json.tweet[i],
+                                            icon:'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                                        })
+                                    }
+                                }
+                                query();
+                                function query(){
+                            $.ajax({
+                            url: '/post/',
+                            type: 'GET',
+                            data: {
+                                Search: searchKeyword,
+                                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                            },
+                            success: function (json) {
+                                console.log(json);
+                                $("#tweetspan").text(json.hits);
+                            }
+                        });
+                setTimeout(query,1000)
+            }
+                            }
+                        });
+            });
+        }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB0ZIRvJhPXPZMtpB_LVX9VPtMwwLTgiUs&callback=initMap">
+    </script>
+  </body>
+</html>
